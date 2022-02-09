@@ -1,5 +1,7 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:fluttermoji/fluttermoji.dart';
 import 'package:star_wars/functions/global.dart';
 import 'package:star_wars/themes/textstyle.dart';
 
@@ -10,34 +12,87 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home> with SingleTickerProviderStateMixin{
 
-int selectedMenu = 0;
+int selectedMenuGlobal = 0;
+bool chooseAvatar = false;
 
+List<String> favoriteMovie = [];
+List<String> favoriteCharacter= [];
+//Tab
+late TabController _tabController;
+
+  @override
+  void initState() {
+    _tabController = TabController(vsync: this, length: 3);
+    _tabController.addListener(() {
+      selectedMenuGlobal = _tabController.index;setState(() {
+
+      });
+    });
+    super.initState();
+  }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 ////////////////////////////////////////////////////////////////////////////
 //                               BUILD                                    //
 ////////////////////////////////////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
+    double _height = MediaQuery.of(context).size.height;
 
-        appBarWidget(),
-
-        Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Scaffold(
+      body: Stack(
         children: [
-          selectCategoryWidget(name: 'Filmes', value: 0),
-          selectCategoryWidget(name: 'Personagens', value: 1),
-          selectCategoryWidget(name: 'Favoritos', value: 2),
-        ],
-        ),
 
-        listWidget(selectedMenu: selectedMenu),
-      ],
+          Image.asset('assets/space.jpg',height: _height,fit: BoxFit.fill),
+
+          Column(
+            children: [
+
+              const SizedBox(height: 30),
+
+              appBarWidget(),
+
+              const SizedBox(height: 8),
+
+              TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      15.0,
+                    ),
+                    color: selectedMenuGlobal<=2 ? Color(0xFFC19B06) : Colors.transparent,
+                  ),
+                  tabs: const [
+                Tab(text: 'Filmes'),
+                Tab(text: 'Personagens'),
+                Tab(text: 'Favoritos'),
+              ]),
+
+              selectedMenuGlobal==3
+                  ? Expanded(child: listWidget(selectedMenu: 3))
+                  :  Expanded(
+                child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      listWidget(selectedMenu: 0),
+                      listWidget(selectedMenu: 1),
+                      listWidget(selectedMenu: 2),
+                    ]),
+              ),
+
+            ],
+          ),
+          chooseAvatar ? chooseAvatarWidget() : Container(),
+        ],
+      ),
+
     );
   }
-
 ////////////////////////////////////////////////////////////////////////////
 //                               WIDGETS                                  //
 ////////////////////////////////////////////////////////////////////////////
@@ -46,34 +101,31 @@ int selectedMenu = 0;
       children: [
 
         GestureDetector(onTap:(){
-
-        },child: Text('Show Site'),
+          selectedMenuGlobal = 3;
+          setState(() {});
+        },child:
+        Container(
+          margin: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(8.0),
+          color: selectedMenuGlobal == 3 ? Color(0xFFC19B06) : Colors.white70,
+          child: const Text('Show Site'),
+        ),
         ),
 
-        const Spacer(),
+        Expanded(child: Image.asset('assets/star wars.png',height: 40)),
+
 
         GestureDetector(
           onTap: (){
-
-          },child: CircleAvatar(radius: 30),
+            chooseAvatar = true;
+            setState(() {});
+          },child: FluttermojiCircleAvatar(
+          backgroundColor: Colors.grey[200],
+          radius: 30,
+        ),
         )
       ],
     );
-  }
-
-  Widget selectCategoryWidget({required String name, required int value}){
-    return
-        GestureDetector(
-            onTap:(){
-              selectedMenu = value;
-              setState(() {});
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(name,style: EstiloTextoPreto.text22),
-          ),
-        );
-
   }
 
   Widget listWidget({required int selectedMenu}){
@@ -83,25 +135,42 @@ int selectedMenu = 0;
     }else if(selectedMenu == 1){
       list = Global().charactersStarWars;
     }else{
-      list = [];
+      list = List.from(favoriteMovie) + List.from(favoriteCharacter);
     }
 
-    return ListView.builder(
-        itemCount: list.length,
-        itemBuilder: (BuildContext context,int index){
-          return moviesRow(name: list[index]);
-        }
-    );
+    if(selectedMenu<=2) {
+      return ListView.builder(
+          itemCount: list.length,
+          itemBuilder: (BuildContext context, int index) {
+
+            if(selectedMenu==0) {
+              return moviesRow(name: list[index]);
+            }else if(selectedMenu==1) {
+              return charactersRow(name: list[index]);
+            }else{
+              return favoritesRow(name: list[index]);
+            }
+
+          }
+      );
+    }else{
+
+      return InAppWebView(
+        initialUrlRequest : URLRequest(url: Uri.parse('https://www.starwars.com/community')),
+      );
+
+    }
 
   }
 
 
   Widget moviesRow({required String name}){
-    bool isFavorite = false;
+    bool isFavorite = favoriteMovie.contains(name);
     return Container(
-      height: 140,
-      padding: const EdgeInsets.symmetric(horizontal: 5,vertical: 8),
+      height: 120,
+      margin: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
       decoration: BoxDecoration(
+        color: Colors.black54,
         border: Border.all(
           width: 2.0,
           color: Colors.purple,
@@ -111,14 +180,23 @@ int selectedMenu = 0;
       child: Row(
         children: [
 
-          Flexible(
-            flex: 80,
+          Expanded(
             child: Text(name,textAlign: TextAlign.center,style: EstiloTextoBranco.text20),
           ),
 
-          Flexible(
-            flex: 20,
-            child: Icon(Icons.favorite,color: isFavorite ? Colors.red : Colors.white),
+          GestureDetector(
+            onTap: (){
+              if(favoriteMovie.contains(name)){
+                favoriteMovie.remove(name);
+              }else{
+                favoriteMovie.add(name);
+              }
+              setState(() {});
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Icon(Icons.favorite,size:40,color: isFavorite ? Colors.red : Colors.white),
+            ),
           ),
 
         ],
@@ -126,20 +204,129 @@ int selectedMenu = 0;
     );
   }
 
-  Widget charactersRow(){
-    bool isFavorite = false;
-    return Row(
-      children: [
+  Widget charactersRow({required String name}){
+    bool isFavorite = favoriteCharacter.contains(name);
+    return GestureDetector(
+      onTap: (){
+        final snackBar = SnackBar(
+          duration: const Duration(minutes: 5),
+          action: SnackBarAction(
+            label: 'Ok',
+            onPressed: (){},
+          ),
+            content:
+        Container(
+          height: 500,
+          child: InAppWebView(
+            initialUrlRequest : URLRequest(url: Uri.parse('https://www.google.com/search?q=${name}&sxsrf=APq-WBuhTTCnORTogrteAg85xJPmKcRayA:1644381017165&source=lnms&tbm=isch&sa=X&ved=2ahUKEwiQzpzT5PH1AhWZppUCHbtgDWMQ_AUoBHoECAEQBg&biw=1318&bih=669&dpr=1')),
+          ),
+        ));
 
-        Flexible(
-          flex: 20,
-          child: Icon(Icons.favorite,color: isFavorite ? Colors.red : Colors.white),
+// Encontra o Scaffold na árvore de Widgets e o usa para exibir o SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+      },
+      child: Container(
+        height: 100,
+        margin: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          gradient: const LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [
+              Colors.blueGrey,
+              Colors.indigoAccent,
+              Colors.blue,
+            ],
+          ),
+          border: Border.all(
+            width: 2.0,
+            color: Colors.purple,
+          ),
+          borderRadius: const BorderRadius.all(Radius.circular(25.0)),
         ),
-      ],
+        child: Row(
+          children: [
+
+            Expanded(
+              child: Text(name,textAlign: TextAlign.center,style: EstiloTextoBranco.text34),
+            ),
+
+            GestureDetector(
+              onTap: (){
+                if(favoriteCharacter.contains(name)){
+                  favoriteCharacter.remove(name);
+                }else{
+                  favoriteCharacter.add(name);
+                }
+                setState(() {});
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Icon(Icons.favorite,size:40,color: isFavorite ? Colors.red : Colors.white),
+              ),
+            ),
+
+          ],
+        ),
+      ),
     );
   }
 
+  Widget favoritesRow({required String name}) {
+    bool isMovieFavorite = favoriteMovie.contains(name);
+
+    return Container(
+      height: 140,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        border: Border.all(
+          width: 4.0,
+          color: isMovieFavorite ? Colors.red : Colors.green,
+        ),
+        borderRadius: const BorderRadius.all(Radius.circular(25.0)),
+      ),
+      child: Row(
+        children: [
+
+          Expanded(
+            child: Text(name, textAlign: TextAlign.center,
+                style: EstiloTextoBranco.text20),
+          ),
+
+        ],
+      ),
+    );
+  }
+
+  Widget chooseAvatarWidget(){
+    return GestureDetector(
+      onTap: () async {
+        chooseAvatar=false;
+        String get = await FluttermojiFunctions().encodeMySVGtoString();
+        setState(() {});
+      },
+      child: Container(
+        color: Colors.black38,
+        child: Column(
+          children: [
+            const Spacer(),
+            FluttermojiCircleAvatar(
+              backgroundColor: Colors.grey[200],
+              radius: 100,
+            ),
+            Container(
+              alignment: Alignment.bottomCenter,
+              child: FluttermojiCustomizer(
+                // showSaveWidget: true,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
-
-
 

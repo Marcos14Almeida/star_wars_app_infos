@@ -14,7 +14,9 @@ class Global{
   ];
 
   List<String> charactersStarWars = [
-
+    'Yoda',
+    'Darth Vader',
+    'Anakin Skywalker',
   ];
 
 }
