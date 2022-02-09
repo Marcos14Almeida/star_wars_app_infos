@@ -1,40 +1,25 @@
-const String tableFavorites = 'favorites';
-
-class FavoriteFields{
-  static final List<String> values = [
-    //Add all fields
-    id, name
-  ];
-
-  static const String id = '_id';
-  static const String name = 'name';
-
-}
-
-class Favorites{
-
-  final int? id;
+class Favorite {
+  final int id;
   final String name;
 
-  const Favorites({
-        this.id,
-        required this.name,
-      });
+  Favorite({
+    required this.id,
+    required this.name,
+  });
 
-  static Favorites fromJson(Map<String, Object?> json) => Favorites(
-    id: json[FavoriteFields.id] as int?,
-    name: json[FavoriteFields.name] as String,
-  );
+  // Convert a Favorite into a Map. The keys must correspond to the names of the
+  // columns in the database.
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+    };
+  }
 
-  Map<String, Object?> toJson() => {
-    FavoriteFields.id: id,
-    FavoriteFields.name: name,
-  };
-
-  Favorites copy({
-    int? id,
-    String? name,
-  }) =>
-        Favorites(id: id ?? this.id, name: name ?? this.name);
-
- }
+  // Implement toString to make it easier to see information about
+  // each dog when using the print statement.
+  @override
+  String toString() {
+    return 'Favorite{id: $id, name: $name}';
+  }
+}

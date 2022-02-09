@@ -1,10 +1,13 @@
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:fluttermoji/fluttermoji.dart';
 import 'package:star_wars/functions/class.dart';
-import 'package:star_wars/functions/global.dart';
 import 'package:star_wars/functions/sql.dart';
+import 'package:star_wars/functions/swapi.dart';
+import 'package:star_wars/themes/custom_decoration.dart';
 import 'package:star_wars/themes/textstyle.dart';
 
 class Home extends StatefulWidget {
@@ -16,26 +19,89 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin{
 
-Color gold = Color(0xFFC0AA05);
-int selectedMenuGlobal = 0;
-bool showSite = false;
-bool chooseAvatar = false;
+Color gold = const Color(0xFFC0AA05);
+bool chooseAvatar = false; //quando clica no avatar
 
-List<String> favoriteMovie = [];
-List<String> favoriteCharacter= [];
+List<String> myFavorite = [];
+
+List<String> charactersList = [];
+List<String> moviesList = [];
+
 //Tab
 late TabController _tabController;
+int selectedMenuGlobal = 0; //Selected tab
+bool showSite = false;
 
+////////////////////////////////////////////////////////////////////////////
+//                               INIT                                     //
+////////////////////////////////////////////////////////////////////////////
   @override
   void initState() {
+
+
+    //GET LOCAL DATA FROM SQLFLITE
+    getSQL();
+
+    //TAB CONTROL
     _tabController = TabController(vsync: this, length: 3);
     _tabController.addListener(() {
-      selectedMenuGlobal = _tabController.index;setState(() {
-
-      });
+      selectedMenuGlobal = _tabController.index;
+      setState(() {});
     });
+
+
+    //SWAPI: API STAR WARS
+    // now get our initial list of SWAPI options
+    for(int i=1;i<10;i++){
+      getAPIcharacters(i);
+    }
+    for(int i=1;i<7;i++){
+      getAPImovies(i);
+    }
+
+
     super.initState();
   }
+
+  getAPImovies(int i){
+    SWAPI _api = SWAPI();
+    _api.getRawDataFromURL('https://swapi.dev/api/films/$i').then( (result) {
+      if(result.statusCode == 200){
+
+        result.body;
+        final data = jsonDecode(result.body)['title'];
+        final episodeID = jsonDecode(result.body)['episode_id'];
+
+        moviesList.add('Episode $episodeID: $data');
+        setState(() {});
+      }
+    });
+  }
+  getAPIcharacters(int i){
+    SWAPI _api = SWAPI();
+    _api.getRawDataFromURL('https://swapi.dev/api/people/$i').then( (result) {
+      if(result.statusCode == 200){
+
+        result.body;
+        final data = jsonDecode(result.body)['name'];
+
+        charactersList.add(data);
+        setState(() {});
+      }
+    });
+  }
+
+  getSQL() async {
+    List<Favorite> favsList = await Sql().funcFavorites();
+
+    for(var favoriteObject in favsList){
+      myFavorite.add(favoriteObject.name);
+    }
+  }
+
+////////////////////////////////////////////////////////////////////////////
+//                               DISPOSE                                  //
+////////////////////////////////////////////////////////////////////////////
   @override
   void dispose() {
     _tabController.dispose();
@@ -56,45 +122,19 @@ late TabController _tabController;
 
           Column(
             children: [
-
               const SizedBox(height: 30),
 
               appBarWidget(),
-
               const SizedBox(height: 8),
 
               showSite
-                  ? Expanded(child: listWidget(selectedMenu: 3))
-                  :  Expanded(
-                    child: Column(
-                      children: [
-
-                        TabBar(
-                            controller: _tabController,
-                            indicator: BoxDecoration(
-                              borderRadius: BorderRadius.circular(
-                                15.0,
-                              ),
-                              color: selectedMenuGlobal<=2 ? gold : Colors.transparent,
-                            ),
-                            tabs: const [
-                              Tab(text: 'Filmes'),
-                              Tab(text: 'Personagens'),
-                              Tab(text: 'Favoritos'),
-                            ]),
-
-                        Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            listWidget(selectedMenu: 0),
-                            listWidget(selectedMenu: 1),
-                            listWidget(selectedMenu: 2),
-                          ]),
-              ),
-                      ],
-                    ),
-                  ),
+                  ?  Expanded(child: listWidget(selectedMenu: 3)) //SITE
+                  :  Expanded(child: Column(
+                    children: [
+                      tabBarWidget(), //LAYOUT DAS TABS
+                      Expanded(child: listSelectedWidget()), //LISTA COM NOMES
+                    ],
+                  )), //tabs com a lista
 
             ],
           ),
@@ -111,13 +151,14 @@ late TabController _tabController;
     return Row(
       children: [
 
+        //SITE OFICIAL
         GestureDetector(
           onTap:() async {
-            //showSite = !showSite;
-            Sql.instance.update(const Favorites(name: 'oi'));
-            List<Favorites> favs = [];
-            favs = await Sql.instance.readAllFavorites();
-            print(favs);
+            showSite = !showSite;
+
+            // Now, use the method above to retrieve all the favorites.
+            print(await Sql().funcFavorites());
+
             setState(() {});
         },child:
         Container(
@@ -137,15 +178,17 @@ late TabController _tabController;
                 ),
               ],
           ),
-          child: const Text('Show Site',style: EstiloTextoBranco.text20,),
+          child: const Text('Site Oficial',style: EstiloTextoBranco.text20,),
         ),
         ),
 
+        //LOGO STAR WARS
         Expanded(child: Image.asset('assets/star wars.png',height: 40)),
 
-
+        //AVATAR
         GestureDetector(
           onTap: (){
+            showSite = !showSite;
             chooseAvatar = true;
             setState(() {});
           },child: CircleAvatar(
@@ -161,20 +204,49 @@ late TabController _tabController;
     );
   }
 
+  //TABS
+  Widget tabBarWidget(){
+    return Container(
+      color: gold.withOpacity(0.2),
+      child: TabBar(
+          controller: _tabController,
+          indicator: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              15.0,
+            ),
+            color: selectedMenuGlobal<=2 ? gold : Colors.transparent,
+          ),
+          tabs: const [
+            Tab(text: 'Filmes'),
+            Tab(text: 'Personagens'),
+            Tab(text: 'Favoritos'),
+          ]),
+    );
+  }
+
+  //SELEÇÃO DAS TABS
+  Widget listSelectedWidget(){
+    return TabBarView(
+        controller: _tabController,
+        children: [
+          listWidget(selectedMenu: 0),
+          listWidget(selectedMenu: 1),
+          listWidget(selectedMenu: 2),
+        ]);
+  }
+
+  //WIDGET DE SELEÇÃO DAS LISTAS
   Widget listWidget({required int selectedMenu}){
     List list = [];
     if(selectedMenu == 0){
-      list = Global().moviesStarWars;
+      list = List.from(moviesList);
       list.sort();
     }else if(selectedMenu == 1){
-      list = Global().charactersStarWars;
+      list = List.from(charactersList);
       list.sort();
     }else{
-      List tempListMovies = List.from(favoriteMovie);
-      tempListMovies.sort();
-      List tempListCharacters = List.from(favoriteCharacter);
-      tempListCharacters.sort();
-      list = tempListMovies + tempListCharacters;
+      list = List.from(myFavorite);
+      list.sort();
     }
 
     if(selectedMenu<=2) {
@@ -202,9 +274,8 @@ late TabController _tabController;
 
   }
 
-
   Widget moviesRow({required String name}){
-    bool isFavorite = favoriteMovie.contains(name);
+    bool isFavorite = myFavorite.contains(name);
     return GestureDetector(
       onTap:(){
         showSearchSnackbar(name);
@@ -229,12 +300,17 @@ late TabController _tabController;
             ),
 
             GestureDetector(
-              onTap: (){
-                if(favoriteMovie.contains(name)){
-                  favoriteMovie.remove(name);
+              onTap: () async {
+                if(myFavorite.contains(name)){
+                  Favorite fav = Favorite(id: myFavorite.indexOf(name), name: name);
+                  Sql().deleteFavorite(fav.id);
+                  myFavorite.remove(name);
                 }else{
-                  favoriteMovie.add(name);
+                  myFavorite.add(name);
+                  Favorite fav = Favorite(id: myFavorite.indexOf(name), name: name);
+                  Sql().insertFavorite(fav);
                 }
+                print(await Sql().funcFavorites());
                 setState(() {});
               },
               child: Padding(
@@ -250,7 +326,7 @@ late TabController _tabController;
   }
 
   Widget charactersRow({required String name}){
-    bool isFavorite = favoriteCharacter.contains(name);
+    bool isFavorite = myFavorite.contains(name);
     return GestureDetector(
       onTap: (){
         showSearchSnackbar(name);
@@ -276,10 +352,14 @@ late TabController _tabController;
 
             GestureDetector(
               onTap: (){
-                if(favoriteCharacter.contains(name)){
-                  favoriteCharacter.remove(name);
+                if(myFavorite.contains(name)){
+                  Favorite fav = Favorite(id: myFavorite.indexOf(name), name: name);
+                  Sql().deleteFavorite(fav.id);
+                  myFavorite.remove(name);
                 }else{
-                  favoriteCharacter.add(name);
+                  myFavorite.add(name);
+                  Favorite fav = Favorite(id: myFavorite.indexOf(name), name: name);
+                  Sql().insertFavorite(fav);
                 }
                 setState(() {});
               },
@@ -296,7 +376,7 @@ late TabController _tabController;
   }
 
   Widget favoritesRow({required String name}) {
-    bool isMovieFavorite = favoriteMovie.contains(name);
+    bool isMovieFavorite = moviesList.contains(name);
 
     return GestureDetector(
       onTap: (){
@@ -372,16 +452,10 @@ late TabController _tabController;
         SizedBox(
           height: 500,
           child: InAppWebView(
-            initialUrlRequest : URLRequest(url: Uri.parse('https://www.google.com/search?q=${name}&sxsrf=APq-WBuhTTCnORTogrteAg85xJPmKcRayA:1644381017165&source=lnms&tbm=isch&sa=X&ved=2ahUKEwiQzpzT5PH1AhWZppUCHbtgDWMQ_AUoBHoECAEQBg&biw=1318&bih=669&dpr=1')),
+            initialUrlRequest : URLRequest(url: Uri.parse('https://www.google.com/search?q=$name&sxsrf=APq-WBuhTTCnORTogrteAg85xJPmKcRayA:1644381017165&source=lnms&tbm=isch&sa=X&ved=2ahUKEwiQzpzT5PH1AhWZppUCHbtgDWMQ_AUoBHoECAEQBg&biw=1318&bih=669&dpr=1')),
           ),
         ));
   }
-  List<BoxShadow> customBorderShadow(){
-    return [BoxShadow(
-        color: gold,
-        blurRadius: 10.0,
-        blurStyle: BlurStyle.outer
-    )];
-  }
+
 }
 
