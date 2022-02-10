@@ -2,6 +2,14 @@
 
 A new Flutter project.
 
+copie o projeto digiando no terminal:
+-git clone https://github.com/Marcos14Almeida/star_wars_app_infos/
+
+Depois rode o código digitando no terminal
+-flutter run
+
+OU baixe o arquivo app-release.apk no repositório diretamente no celular. 
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
