@@ -52,9 +52,11 @@ bool showSite = false;
 
     //SWAPI: API STAR WARS
     // now get our initial list of SWAPI options
-    for(int i=1;i<10;i++){
+    //Existem 82 personagens na documentação do SWAPI
+    for(int i=1;i<82;i++){
       getAPIcharacters(i);
     }
+    //Existem 6 filmes na documentação do SWAPI
     for(int i=1;i<7;i++){
       getAPImovies(i);
     }
@@ -83,8 +85,8 @@ bool showSite = false;
       if(result.statusCode == 200){
 
         result.body;
-        final data = jsonDecode(result.body)['name'];
-
+        String data = jsonDecode(result.body)['name'].toString();
+        data = data.replaceAll('Ã©', 'é'); //nomes com 'é' ficam alterados com o jsonDecode
         charactersList.add(data);
         setState(() {});
       }
@@ -95,8 +97,15 @@ bool showSite = false;
     List<Favorite> favsList = await Sql().funcFavorites();
 
     for(var favoriteObject in favsList){
-      myFavorite.add(favoriteObject.name);
+      if(favoriteObject.id==-1){
+        //Pega as caracteristicas salvas
+        FluttermojiFunctions().decodeFluttermojifromString(favoriteObject.name);
+      }else{
+        //adiciona o objetivo salvo na lista de favoritos
+        myFavorite.add(favoriteObject.name);
+      }
     }
+
   }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -157,7 +166,7 @@ bool showSite = false;
             showSite = !showSite;
 
             // Now, use the method above to retrieve all the favorites.
-            print(await Sql().funcFavorites());
+            //print(await Sql().funcFavorites());
 
             setState(() {});
         },child:
@@ -188,13 +197,13 @@ bool showSite = false;
         //AVATAR
         GestureDetector(
           onTap: (){
-            showSite = !showSite;
             chooseAvatar = true;
             setState(() {});
           },child: CircleAvatar(
           backgroundColor: gold,
             radius: 33,
             child: FluttermojiCircleAvatar(
+
             backgroundColor: Colors.grey[200],
             radius: 30,
         ),
@@ -310,7 +319,7 @@ bool showSite = false;
                   Favorite fav = Favorite(id: myFavorite.indexOf(name), name: name);
                   Sql().insertFavorite(fav);
                 }
-                print(await Sql().funcFavorites());
+                //print(await Sql().funcFavorites());
                 setState(() {});
               },
               child: Padding(
@@ -411,7 +420,13 @@ bool showSite = false;
     return GestureDetector(
       onTap: () async {
         chooseAvatar=false;
-        String get = await FluttermojiFunctions().encodeMySVGtoString();
+
+        //SAVE INTO DATABASE
+        String emojiString = await FluttermojiFunctions().encodeMySVGtoString();
+
+        Favorite favEmoji = Favorite(id: -1, name: emojiString);
+        Sql().insertFavorite(favEmoji);
+
         setState(() {});
       },
       child: Container(

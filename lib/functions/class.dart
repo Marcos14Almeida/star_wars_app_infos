@@ -16,8 +16,6 @@ class Favorite {
     };
   }
 
-  // Implement toString to make it easier to see information about
-  // each dog when using the print statement.
   @override
   String toString() {
     return 'Favorite{id: $id, name: $name}';
