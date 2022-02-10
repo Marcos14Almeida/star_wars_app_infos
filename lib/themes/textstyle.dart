@@ -13,15 +13,3 @@ abstract class EstiloTextoBranco {
   );
 }
 
-abstract class EstiloTextoPreto {
-  static const TextStyle text22 = TextStyle(
-    fontFamily: 'Roboto',
-    color: Colors.black,
-    fontSize: 22,
-  );
-  static const TextStyle text16 = TextStyle(
-    fontFamily: 'Roboto',
-    color: Colors.black,
-    fontSize: 16,
-  );
-}

@@ -1,9 +1,10 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:star_wars/functions/class.dart';
+import 'package:star_wars/class/favorites.dart';
 
 class Sql{
 
+  //VÁRIAVEIS UNIVERSAIS
   static String databasePath = 'favorites.db';
   static String tableFavorite = 'favorite';
 
@@ -15,7 +16,9 @@ class Sql{
     return _database!;
   }
 
+  //CRIA O DATABASE
   Future<Database> _initDB(String filePath) async{
+    //Determina o caminho do database
     final databasesPath = await getDatabasesPath();
     String path = join(databasesPath, databasePath);
 
@@ -24,19 +27,6 @@ class Sql{
         'CREATE TABLE IF NOT EXISTS $tableFavorite(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)',
       );
     },);
-  }
-
-  test() async {
-    // Check if we have an existing copy first
-    var databasesPath = await getDatabasesPath();
-    String path = join(databasesPath, databasePath);
-    // try opening (will work if it exists)
-    Database db;
-    try {
-      db = await openDatabase(path, readOnly: true);
-    } catch (e) {
-      print("Error $e");
-    }
   }
 
   Future<void> insertFavorite(Favorite favorites) async {
@@ -90,5 +80,20 @@ class Sql{
       // Pass the Favorite's id as a whereArg to prevent SQL injection.
       whereArgs: [id],
     );
+  }
+
+
+  //Funçao de teste se o database esta criado corretamente
+  test() async {
+    // Check if we have an existing copy first
+    var databasesPath = await getDatabasesPath();
+    String path = join(databasesPath, databasePath);
+    // try opening (will work if it exists)
+    Database db;
+    try {
+      db = await openDatabase(path, readOnly: true);
+    } catch (e) {
+      print("Error $e");
+    }
   }
 }

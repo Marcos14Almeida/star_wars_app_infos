@@ -16,8 +16,4 @@ class Favorite {
     };
   }
 
-  @override
-  String toString() {
-    return 'Favorite{id: $id, name: $name}';
-  }
 }

@@ -4,7 +4,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:fluttermoji/fluttermoji.dart';
-import 'package:star_wars/functions/class.dart';
+import 'package:fluttermoji/fluttermoji_assets/fluttermojimodel.dart';
+import 'package:star_wars/class/favorites.dart';
 import 'package:star_wars/functions/sql.dart';
 import 'package:star_wars/functions/swapi.dart';
 import 'package:star_wars/themes/custom_decoration.dart';
@@ -20,16 +21,21 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin{
 
 Color gold = const Color(0xFFC0AA05);
+
 bool chooseAvatar = false; //quando clica no avatar
 
-List<String> myFavorite = [];
+List<String> myFavorite = []; //lista com favoritos selecionados
 
-List<String> charactersList = [];
-List<String> moviesList = [];
+List<String> charactersList = []; //lista com todos os personagens provenientes do API SWAPI
+List<String> moviesList = [];     //lista com todos os filmes provenientes do API SWAPI
 
 //Tab
 late TabController _tabController;
 int selectedMenuGlobal = 0; //Selected tab
+  //Filmes = 0
+  //Personagens = 1
+  //favoritos =2
+  //site = 3
 bool showSite = false;
 
 ////////////////////////////////////////////////////////////////////////////
@@ -38,22 +44,16 @@ bool showSite = false;
   @override
   void initState() {
 
-
     //GET LOCAL DATA FROM SQLFLITE
-    getSQL();
+    getSQLData();
 
     //TAB CONTROL
-    _tabController = TabController(vsync: this, length: 3);
-    _tabController.addListener(() {
-      selectedMenuGlobal = _tabController.index;
-      setState(() {});
-    });
-
+    tabControl();
 
     //SWAPI: API STAR WARS
     // now get our initial list of SWAPI options
-    //Existem 82 personagens na documentação do SWAPI
-    for(int i=1;i<82;i++){
+    //Existem 83 personagens na documentação do SWAPI
+    for(int i=1;i<84;i++){
       getAPIcharacters(i);
     }
     //Existem 6 filmes na documentação do SWAPI
@@ -61,20 +61,26 @@ bool showSite = false;
       getAPImovies(i);
     }
 
-
     super.initState();
   }
 
+  tabControl(){
+    _tabController = TabController(vsync: this, length: 3);
+    _tabController.addListener(() {
+      selectedMenuGlobal = _tabController.index;
+      setState(() {});
+    });
+
+  }
   getAPImovies(int i){
     SWAPI _api = SWAPI();
     _api.getRawDataFromURL('https://swapi.dev/api/films/$i').then( (result) {
       if(result.statusCode == 200){
-
-        result.body;
-        final data = jsonDecode(result.body)['title'];
+        //Se a resposta pra url for positiva:
+        final name = jsonDecode(result.body)['title'];
         final episodeID = jsonDecode(result.body)['episode_id'];
 
-        moviesList.add('Episode $episodeID: $data');
+        moviesList.add('Episode $episodeID: $name');
         setState(() {});
       }
     });
@@ -84,26 +90,22 @@ bool showSite = false;
     _api.getRawDataFromURL('https://swapi.dev/api/people/$i').then( (result) {
       if(result.statusCode == 200){
 
-        result.body;
-        String data = jsonDecode(result.body)['name'].toString();
-        data = data.replaceAll('Ã©', 'é'); //nomes com 'é' ficam alterados com o jsonDecode
-        charactersList.add(data);
+        //Se a resposta pra url for positiva:
+        String name = jsonDecode(result.body)['name'].toString();
+        name = name.replaceAll('Ã©', 'é'); //nomes com 'é' ficam alterados com o jsonDecode
+        charactersList.add(name);
         setState(() {});
       }
     });
   }
 
-  getSQL() async {
+  getSQLData() async {
+    //Pega lista com todos os favoritos selecionados, salvos no SQL
     List<Favorite> favsList = await Sql().funcFavorites();
 
     for(var favoriteObject in favsList){
-      if(favoriteObject.id==-1){
-        //Pega as caracteristicas salvas
-        FluttermojiFunctions().decodeFluttermojifromString(favoriteObject.name);
-      }else{
-        //adiciona o objetivo salvo na lista de favoritos
+        //adiciona o objeto salvo na lista de favoritos
         myFavorite.add(favoriteObject.name);
-      }
     }
 
   }
@@ -127,6 +129,7 @@ bool showSite = false;
       body: Stack(
         children: [
 
+          //BACKGROUND COM UM FUNDO ESPACIAL
           Image.asset('assets/space.jpg',height: _height,fit: BoxFit.fill),
 
           Column(
@@ -147,6 +150,8 @@ bool showSite = false;
 
             ],
           ),
+
+          //Quando clica em editar o avatar
           chooseAvatar ? chooseAvatarWidget() : Container(),
         ],
       ),
@@ -164,10 +169,6 @@ bool showSite = false;
         GestureDetector(
           onTap:() async {
             showSite = !showSite;
-
-            // Now, use the method above to retrieve all the favorites.
-            //print(await Sql().funcFavorites());
-
             setState(() {});
         },child:
         Container(
@@ -179,13 +180,7 @@ bool showSite = false;
                 width: 2.0,
                 color: gold,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: gold,
-                  blurRadius: 8.0,
-                  blurStyle: BlurStyle.outer
-                ),
-              ],
+              boxShadow: customBorderShadow(),
           ),
           child: const Text('Site Oficial',style: EstiloTextoBranco.text20,),
         ),
@@ -203,7 +198,6 @@ bool showSite = false;
           backgroundColor: gold,
             radius: 33,
             child: FluttermojiCircleAvatar(
-
             backgroundColor: Colors.grey[200],
             radius: 30,
         ),
@@ -253,7 +247,7 @@ bool showSite = false;
     }else if(selectedMenu == 1){
       list = List.from(charactersList);
       list.sort();
-    }else{
+    }else if(selectedMenu == 2){
       list = List.from(myFavorite);
       list.sort();
     }
@@ -274,7 +268,7 @@ bool showSite = false;
           }
       );
     }else{
-
+      //Se clicou no botão 'SITE OFICIAL'
       return InAppWebView(
         initialUrlRequest : URLRequest(url: Uri.parse('https://www.starwars.com/community')),
       );
@@ -287,20 +281,12 @@ bool showSite = false;
     bool isFavorite = myFavorite.contains(name);
     return GestureDetector(
       onTap:(){
-        showSearchSnackbar(name);
+        showSearchSnackbar(name); //pesquisa no google imagens
       },
       child: Container(
         height: 120,
         margin: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black54,
-          border: Border.all(
-            width: 2.0,
-            color: gold,
-          ),
-          borderRadius: const BorderRadius.all(Radius.circular(25.0)),
-          boxShadow: customBorderShadow(),
-        ),
+        decoration: customBoxDecoration(),
         child: Row(
           children: [
 
@@ -338,20 +324,12 @@ bool showSite = false;
     bool isFavorite = myFavorite.contains(name);
     return GestureDetector(
       onTap: (){
-        showSearchSnackbar(name);
+        showSearchSnackbar(name); //pesquisa no google imagens
       },
       child: Container(
         height: 100,
         margin: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black54,
-          border: Border.all(
-            width: 2.0,
-            color: gold,
-          ),
-          borderRadius: const BorderRadius.all(Radius.circular(25.0)),
-          boxShadow: customBorderShadow(),
-        ),
+        decoration: customBoxDecoration(),
         child: Row(
           children: [
 
@@ -389,7 +367,7 @@ bool showSite = false;
 
     return GestureDetector(
       onTap: (){
-        showSearchSnackbar(name);
+        showSearchSnackbar(name); //pesquisa no google imagens
       },
       child: Container(
         height: 120,
@@ -421,16 +399,10 @@ bool showSite = false;
       onTap: () async {
         chooseAvatar=false;
 
-        //SAVE INTO DATABASE
-        String emojiString = await FluttermojiFunctions().encodeMySVGtoString();
-
-        Favorite favEmoji = Favorite(id: -1, name: emojiString);
-        Sql().insertFavorite(favEmoji);
-
         setState(() {});
       },
       child: Container(
-        color: Colors.black38,
+        color: Colors.blue[300],
         child: Column(
           children: [
             const Spacer(),
@@ -441,7 +413,7 @@ bool showSite = false;
             Container(
               alignment: Alignment.bottomCenter,
               child: FluttermojiCustomizer(
-                // showSaveWidget: true,
+                outerTitleText: 'Customizar:',
               ),
             ),
           ],
