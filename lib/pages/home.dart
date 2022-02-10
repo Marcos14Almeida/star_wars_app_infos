@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:fluttermoji/fluttermoji.dart';
-import 'package:fluttermoji/fluttermoji_assets/fluttermojimodel.dart';
 import 'package:star_wars/class/favorites.dart';
 import 'package:star_wars/functions/sql.dart';
 import 'package:star_wars/functions/swapi.dart';
