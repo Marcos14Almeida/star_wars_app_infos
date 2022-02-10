@@ -1,9 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.marcos.star_wars">
+
+    <uses-permission android:name="android.permission.INTERNET"/> <!-- Add this -->
    <application
         android:label="star_wars"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
