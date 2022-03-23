@@ -1,6 +1,12 @@
 # star_wars
 
-A new Flutter project.
+## Descrição do Projeto 
+
+Um aplicativo mobile para Android, que utiliza flutter, para mostrar uma lista de personagens e filmes de Star Wars, usando de uma API externa. O usuário pode usar ele para marcar seus items favoritos e acessar o site de fans oficial de Star Wars para ter mais notícias relevantes. Esse aplicativo foi desenvolvido para o processo seletivo para desenvolvedor do app Escribo. 
+
+## Como Executar o projeto
+
+Você precisa ter o Flutter devidamente instalado no seu computador, depois disso: 
 
 copie o projeto digiando no terminal:
 -git clone https://github.com/Marcos14Almeida/star_wars_app_infos/
@@ -10,15 +16,3 @@ Depois rode o código digitando no terminal
 
 OU baixe o arquivo app-release.apk no repositório diretamente no celular. 
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
