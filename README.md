@@ -18,11 +18,10 @@ copie o projeto digiando no terminal:
 Depois rode o código digitando no terminal
 -flutter run
 
+OU baixe o arquivo app-release.apk no repositório diretamente no celular. 
+
 
 <p align="center">
   <img src=" https://github.com/Marcos14Almeida/star_wars_app_infos/blob/master/screenshot.jpg" width="200" title="Screenshot">
   </a>
 </p>
-
-OU baixe o arquivo app-release.apk no repositório diretamente no celular. 
-
