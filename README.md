@@ -22,6 +22,6 @@ OU baixe o arquivo app-release.apk no repositório diretamente no celular.
 
 
 <p align="center">
-  <img src=" https://github.com/Marcos14Almeida/star_wars_app_infos/blob/master/screenshot.jpg" width="200" title="Screenshot">
+  <img src="https://github.com/Marcos14Almeida/star_wars_app_infos/blob/master/screenshot.jpg" width="200" title="Screenshot">
   </a>
 </p>
