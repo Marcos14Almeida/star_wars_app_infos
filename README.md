@@ -2,7 +2,7 @@
 
 ## Descrição do Projeto 
 
-Um aplicativo mobile para Android, que utiliza flutter, que usa uma API externa para mostrar uma lista de personagens e filmes de Star Wars. Esse aplicativo foi desenvolvido para o processo seletivo para desenvolvedor do app Escribo. 
+Um aplicativo mobile para Android, que utiliza flutter, que usa uma API externa para mostrar uma lista de personagens e filmes de Star Wars.
 
 ## Como usar o Projeto 
 
